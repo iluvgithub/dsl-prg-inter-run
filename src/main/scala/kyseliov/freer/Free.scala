@@ -117,4 +117,3 @@ object StateSyntax:
       } yield (n, a) :: xs
     )
     runState(0, st)._1.reverse
-       
