@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>demo</groupId>
+  <artifactId>fr-domain</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <!-- General -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+
+    <!-- Scala -->
+    <scala.version>3.3.3</scala.version>
+    <scala.binary.version>3</scala.binary.version>
+
+    <!-- Typelevel -->
+    <cats.version>2.10.0</cats.version>
+
+    <!-- Atnos -->
+    <atnos.eff.version>8.1.0</atnos.eff.version>
+
+    <!-- H2 Database -->
+    <h2.version>2.2.224</h2.version>
+
+    <!-- ScalaMeta -->
+    <munit.version>1.0.4</munit.version>
+
+    <!-- ScalaTest -->
+    <scalatest.version>3.2.19</scalatest.version>
+
+    <!-- Maven plugins -->
+    <scala.maven.plugin.version>4.8.1</scala.maven.plugin.version>
+    <exec.maven.plugin.version>3.1.1</exec.maven.plugin.version>
+  </properties>
+
+  <dependencies>
+
+    <!-- Scala -->
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala3-library_3</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+
+    <!-- Typelevel -->
+    <dependency>
+      <groupId>org.typelevel</groupId>
+      <artifactId>cats-effect_3</artifactId>
+      <version>3.6.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.typelevel</groupId>
+      <artifactId>cats-free_${scala.binary.version}</artifactId>
+      <version>${cats.version}</version>
+    </dependency>
+
+    <!-- Atnos Eff -->
+    <dependency>
+      <groupId>org.atnos</groupId>
+      <artifactId>eff_3</artifactId>
+      <version>${atnos.eff.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.atnos</groupId>
+      <artifactId>eff-core_3</artifactId>
+      <version>${atnos.eff.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.atnos</groupId>
+      <artifactId>eff-future_3</artifactId>
+      <version>${atnos.eff.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.atnos</groupId>
+      <artifactId>eff-reader_3</artifactId>
+      <version>${atnos.eff.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.atnos</groupId>
+      <artifactId>eff-writer_3</artifactId>
+      <version>${atnos.eff.version}</version>
+    </dependency>
+
+    <!-- H2 Database -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
+    </dependency>
+
+    <!-- ScalaMeta / MUnit -->
+    <dependency>
+      <groupId>org.scalameta</groupId>
+      <artifactId>munit_3</artifactId>
+      <version>${munit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- ScalaTest -->
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_3</artifactId>
+      <version>${scalatest.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+
+    <plugins>
+
+      <!-- Scala Maven Plugin -->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>${scala.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+          <args>
+            <arg>-deprecation</arg>
+            <arg>-feature</arg>
+          </args>
+        </configuration>
+      </plugin>
+
+      <!-- Exec Maven Plugin -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec.maven.plugin.version}</version>
+        <configuration>
+          <mainClass>runDemo</mainClass>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
