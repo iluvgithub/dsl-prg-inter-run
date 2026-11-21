@@ -1,6 +1,6 @@
 package kyseliov.freer
 
-import cats.Functor
+import cats.{Functor, Monad}
 
 import scala.annotation.tailrec
 
@@ -8,6 +8,8 @@ import scala.annotation.tailrec
 sealed trait Free[F[_], A]:
 
   def flatMap[B](g: A => Free[F, B]): Free[F, B] = FlatMap(this, g)
+
+  def map[B](f: A => B): Free[F, B] = flatMap(f andThen Free.pure)
 
 case class Pure[F[_], A](a: A) extends Free[F, A]
 
@@ -35,6 +37,23 @@ object Free:
     }
   }
 
+  given [F[_]]: Monad[[X] =>> Free[F, X]] with
+
+    def pure[A](a: A): Free[F, A] =
+      Free.pure(a)
+
+    def flatMap[A, B](fa: Free[F, A])(g: A => Free[F, B]): Free[F, B] =
+      FlatMap(fa, g)
+
+    def tailRecM[A, B](a: A)(f: A => Free[F, Either[A, B]]): Free[F, B] =
+      FlatMap(f(a), {
+        case Left(next) => tailRecM(next)(f)
+        case Right(b) => Free.pure(b)
+      })
+
+
+  def freeMonad[F[_]] = summon[Monad[[X] =>> Free[F, X]]]
+
 
 object Trampoline:
 
@@ -53,3 +72,49 @@ object Trampoline:
     case Right(a) => a
     case Left(ffr) => run(ffr())
   }
+
+
+object StateSyntax:
+
+  enum St[S, A]:
+    case Get(f: S => A)
+    case Put(s: S, a: A)
+
+  type FreeState[S, A] = Free[[X] =>> St[S, X], A]
+
+  def pureState[S, A](a: A): FreeState[S, A] = Free.pure(a)
+
+  def putState[S](s: S): FreeState[S, Unit] = Free.impure(St.Put(s, pureState(())))
+
+  def getState[S]: FreeState[S, S] = Free.impure(St.Get(pureState))
+
+
+  given [S]: Functor[[X] =>> St[S, X]] with
+
+    def map[A, B](fa: St[S, A])(f: A => B): St[S, B] =
+      fa match
+        case St.Get(g) =>
+          St.Get(g.andThen(f))
+
+        case St.Put(s, a) =>
+          St.Put(s, f(a))
+
+  @tailrec
+  def runState[S, A](s: S, fr: FreeState[S, A]): (A, S) =
+    Free.out(fr) match {
+      case Left(St.Get(f)) => runState(s, f(s))
+      case Left(St.Put(s0, fa)) => runState(s0, fa)
+      case Right(a) => (a, s)
+    }
+
+  def zipIndex[A](as: List[A]): List[(Int, A)] =
+    val z0: FreeState[Int, List[(Int, A)]] = pureState[Int, List[(Int, A)]](List())
+    val st: FreeState[Int, List[(Int, A)]] = as.foldLeft(z0)((acc, a) =>
+      for {
+        xs <- acc
+        n <- getState
+        _ <- putState(n + 1)
+      } yield (n, a) :: xs
+    )
+    runState(0, st)._1.reverse
+       
