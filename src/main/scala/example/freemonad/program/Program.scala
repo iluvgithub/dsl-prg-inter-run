@@ -1,4 +1,6 @@
-package example.program
+package example.freemonad.program
+
+import example.freemonad.domain.{Account, AccountF, credit, debit}
 
 // =============================================================================
 // 2. PROGRAM
@@ -7,7 +9,7 @@ package example.program
 //    transaction is mentioned. The same program runs against any interpreter.
 // =============================================================================
 object Program:
-  import example.domain.*
+  import example.freemonad.domain.*
 
   def transfer(from: String, to: String, amt: BigDecimal): AccountF[(Account, Account)] =
     for

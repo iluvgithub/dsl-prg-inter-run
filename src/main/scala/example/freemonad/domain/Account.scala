@@ -1,4 +1,4 @@
-package example.domain
+package example.freemonad.domain
 
 import cats.free.Free
 

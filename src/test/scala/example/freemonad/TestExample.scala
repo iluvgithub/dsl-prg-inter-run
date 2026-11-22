@@ -1,9 +1,9 @@
-package example
+package example.freemonad
 
-import example.domain.{Account, AccountF}
-import example.interpreter.Interpreters.{InMemoryInterpreter, JdbcInterpreter}
-import example.program.Program
-import example.runner.Runner._
+import example.freemonad.domain.{Account, AccountF}
+import example.freemonad.interpreter.Interpreters.{InMemoryInterpreter, JdbcInterpreter}
+import example.freemonad.program.Program
+import example.freemonad.runner.Runner._
 import munit.FunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.should.Matchers.shouldBe

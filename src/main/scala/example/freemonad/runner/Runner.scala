@@ -1,6 +1,6 @@
-package example.runner
+package example.freemonad.runner
 
-import example.interpreter.Interpreters.{InMemoryInterpreter, JdbcInterpreter}
+import example.freemonad.interpreter.Interpreters.{InMemoryInterpreter, JdbcInterpreter}
 
 import java.sql.Connection
 import scala.util.{Failure, Success, Try}
@@ -13,7 +13,8 @@ import scala.util.{Failure, Success, Try}
 //    Exposed as extension methods so a program reads as `program.runXxx(...)`.
 // =============================================================================
 object Runner:
-  import example.domain.*
+
+  import example.freemonad.domain.*
 
   extension [A](program: AccountF[A])
 

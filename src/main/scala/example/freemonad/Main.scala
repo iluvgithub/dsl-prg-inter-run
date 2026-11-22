@@ -1,4 +1,5 @@
-package example
+package example.freemonad
+
 //> using scala 3.3.3
 //> using dep org.typelevel::cats-free:2.10.0
 //> using dep com.h2database:h2:2.2.224
@@ -13,9 +14,9 @@ package example
 //   4. RUNNER       executes a program with an interpreter + handles
 //                   cross-cutting concerns (transaction, connection lifecycle)
 
-import example.interpreter.Interpreters.InMemoryInterpreter
-import example.program.Program
-import example.runner.Runner.{runInMemory, runTransactionally}
+import example.freemonad.interpreter.Interpreters.InMemoryInterpreter
+import example.freemonad.program.Program
+import example.freemonad.runner.Runner.{runInMemory, runTransactionally}
 
 import java.sql.DriverManager
 import scala.util.Using

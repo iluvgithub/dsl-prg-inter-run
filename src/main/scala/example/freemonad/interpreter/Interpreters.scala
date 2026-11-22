@@ -1,8 +1,9 @@
-package example.interpreter
+package example.freemonad.interpreter
 
 import cats.data.Kleisli
 import cats.~>
-import example.domain.AccountOp.{Credit, Debit}
+import example.freemonad.domain.{Account, AccountOp}
+import example.freemonad.domain.AccountOp.{Credit, Debit}
 
 import java.sql.Connection
 import scala.collection.mutable
@@ -15,7 +16,7 @@ import scala.util.{Failure, Success, Try, Using}
 //    transactions.
 // =============================================================================
 object Interpreters:
-  import example.domain.*
+  import example. freemonad.domain.*
 
   // ---- 3a. In-memory interpreter (target monad: Try) -----------------------
   //  Handy for tests. Note: no rollback, each operation is applied immediately.
