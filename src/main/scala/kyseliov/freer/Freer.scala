@@ -4,7 +4,9 @@ import scala.annotation.tailrec
 //https://okmij.org/ftp/Haskell/extensible/more.pdf
 
 sealed trait Arrs[F[_], A, B]
+
 final case class Leaf[F[_], A, B](f: A => Freer[F, B]) extends Arrs[F, A, B]
+
 final case class Node[F[_], A, X, B](l: Arrs[F, A, X], r: Arrs[F, X, B]) extends Arrs[F, A, B]
 
 extension [F[_], A, B](q: Arrs[F, A, B])
@@ -15,15 +17,17 @@ extension [F[_], A, B](q: Arrs[F, A, B])
 
 /** Result of taking the leftmost arrow off a queue (the paper's TViewL). */
 sealed trait ViewL[F[_], A, B]
+
 final case class One[F[_], A, B](f: A => Freer[F, B]) extends ViewL[F, A, B]
+
 final case class Cons[F[_], A, X, B](f: A => Freer[F, X], rest: Arrs[F, X, B]) extends ViewL[F, A, B]
 
 /** Re-associates to the right while looking for the head: amortized O(1). */
 @tailrec
 def viewl[F[_], A, B](q: Arrs[F, A, B]): ViewL[F, A, B] = q match
-  case Leaf(f)                => One(f)
-  case Node(Leaf(f), r)       => Cons(f, r)
-  case Node(Node(a, b), c)    => viewl(Node(a, Node(b, c)))
+  case Leaf(f) => One(f)
+  case Node(Leaf(f), r) => Cons(f, r)
+  case Node(Node(a, b), c) => viewl(Node(a, Node(b, c)))
 
 /** Apply a whole queue of continuations to a value (the paper's qApp). */
 @tailrec
@@ -32,7 +36,7 @@ def qApp[F[_], A, B](q: Arrs[F, A, B], x: A): Freer[F, B] =
     case One(h) => h(x)
     case Cons(h, t) =>
       h(x) match
-        case Pure(y)        => qApp(t, y)
+        case Pure(y) => qApp(t, y)
         case Impure(fx, q2) => Impure(fx, q2 >< t)
 
 // ---------------------------------------------------------------------------
@@ -41,11 +45,13 @@ def qApp[F[_], A, B](q: Arrs[F, A, B], x: A): Freer[F, B] =
 
 sealed trait Freer[F[_], A]:
   def flatMap[B](f: A => Freer[F, B]): Freer[F, B] = this match
-    case Pure(a)        => f(a)
-    case Impure(fx, k)  => Impure(fx, k |> f)
+    case Pure(a) => f(a)
+    case Impure(fx, k) => Impure(fx, k |> f)
+
   def map[B](f: A => B): Freer[F, B] = flatMap(a => Pure(f(a)))
 
 final case class Pure[F[_], A](a: A) extends Freer[F, A]
+
 final case class Impure[F[_], X, A](fx: F[X], k: Arrs[F, X, A]) extends Freer[F, A]
 
 object Freer:
@@ -56,7 +62,7 @@ object Freer:
   def foldMap[F[_], M[_], A](m: Freer[F, A])(nt: [X] => F[X] => M[X])(
     using pure: [X] => X => M[X], bind: [X, Y] => (M[X], X => M[Y]) => M[Y]): M[A] =
     m match
-      case Pure(a)       => pure(a)
+      case Pure(a) => pure(a)
       case Impure(fx, k) => bind(nt(fx), x => foldMap(qApp(k, x))(nt))
 
 // ---------------------------------------------------------------------------
@@ -65,7 +71,9 @@ object Freer:
 
 /** A type-level list of effect constructors. */
 sealed trait Effects
+
 sealed trait NoFx extends Effects
+
 sealed trait :+:[F[_], R <: Effects] extends Effects
 
 /** An effect value `F[X]` for some F in R, stored with the index of F in R. */
@@ -101,7 +109,7 @@ type Eff[R <: Effects, A] = Freer[UnionK[R], A]
 
 /** Run a computation with no remaining effects. */
 def run[A](m: Eff[NoFx, A]): A = m match
-  case Pure(a)      => a
+  case Pure(a) => a
   case Impure(_, _) => throw new IllegalStateException("impossible: no effects left")
 
 /** Issue an effectful request. */
@@ -120,7 +128,8 @@ def handleRelay[F[_], R <: Effects, A, B](m: Eff[F :+: R, A])(ret: A => Eff[R, B
     case Impure(u, q) =>
       Union.decomp(u) match
         case Right(fx) => h(fx, x => loop(qApp(q, x)))
-        case Left(u2)  => Impure(u2, Leaf((x: Any) => loop(qApp(q, x.asInstanceOf))))
+        case Left(u2) => Impure(u2, Leaf((x: Any) => loop(qApp(q, x.asInstanceOf))))
+
   loop(m)
 
 /** Same, threading a state through the handler. */
@@ -131,7 +140,8 @@ def handleRelayS[F[_], R <: Effects, S, A, B](s0: S, m: Eff[F :+: R, A])(ret: (S
     case Impure(u, q) =>
       Union.decomp(u) match
         case Right(fx) => h(s, fx, (s2, x) => loop(s2, qApp(q, x)))
-        case Left(u2)  => Impure(u2, Leaf((x: Any) => loop(s, qApp(q, x.asInstanceOf))))
+        case Left(u2) => Impure(u2, Leaf((x: Any) => loop(s, qApp(q, x.asInstanceOf))))
+
   loop(s0, m)
 
 // ---------------------------------------------------------------------------
@@ -141,6 +151,7 @@ def handleRelayS[F[_], R <: Effects, S, A, B](s0: S, m: Eff[F :+: R, A])(ret: (S
 // ---- Reader ----
 enum Reader[E, X]:
   case Ask() extends Reader[E, E]
+
 type ReaderOf[E] = [X] =>> Reader[E, X]
 
 def ask[E, R <: Effects](using Member[ReaderOf[E], R]): Eff[R, E] =
@@ -156,6 +167,7 @@ def runReader[E, R <: Effects, A](e: E)(m: Eff[ReaderOf[E] :+: R, A]): Eff[R, A]
 enum State[S, X]:
   case Get() extends State[S, S]
   case Put(s: S) extends State[S, Unit]
+
 type StateOf[S] = [X] =>> State[S, X]
 
 def get[S, R <: Effects](using Member[StateOf[S], R]): Eff[R, S] =
@@ -169,12 +181,13 @@ def runState[S, R <: Effects, A](s0: S)(m: Eff[StateOf[S] :+: R, A]): Eff[R, (A,
   handleRelayS[StateOf[S], R, S, A, (A, S)](s0, m)((s, a) => Pure((a, s)))(
     [X] => (s: S, fx: State[S, X], k: (S, X) => Eff[R, (A, S)]) =>
       fx match
-        case State.Get()    => k(s, s)
-        case State.Put(s2)  => k(s2, ()))
+        case State.Get() => k(s, s)
+        case State.Put(s2) => k(s2, ()))
 
 // ---- Writer ----
 enum Writer[W, X]:
   case Tell(w: W) extends Writer[W, Unit]
+
 type WriterOf[W] = [X] =>> Writer[W, X]
 
 def tell[W, R <: Effects](w: W)(using Member[WriterOf[W], R]): Eff[R, Unit] =
@@ -189,6 +202,7 @@ def runWriter[W, R <: Effects, A](m: Eff[WriterOf[W] :+: R, A]): Eff[R, (A, List
 // ---- Exception ----
 enum Exc[E, X]:
   case Throw(e: E) extends Exc[E, Nothing]
+
 type ExcOf[E] = [X] =>> Exc[E, X]
 
 def throwError[E, R <: Effects, A](e: E)(using Member[ExcOf[E], R]): Eff[R, A] =
@@ -210,12 +224,12 @@ type Fx = ReaderOf[Int] :+: StateOf[Int] :+: WriterOf[String] :+: ExcOf[String] 
 def program[R <: Effects](using
                           Member[ReaderOf[Int], R], Member[StateOf[Int], R], Member[WriterOf[String], R]): Eff[R, Int] =
   for
-    e  <- ask[Int, R]
-    s  <- get[Int, R]
-    _  <- tell[String, R](s"env=$e state=$s")
-    _  <- put[Int, R](s + e)
+    e <- ask[Int, R]
+    s <- get[Int, R]
+    _ <- tell[String, R](s"env=$e state=$s")
+    _ <- put[Int, R](s + e)
     s2 <- get[Int, R]
-    _  <- tell[String, R](s"new state=$s2")
+    _ <- tell[String, R](s"new state=$s2")
   yield s2 * 2
 
 def failing[R <: Effects](using Member[StateOf[Int], R], Member[ExcOf[String], R]): Eff[R, Int] =
@@ -228,18 +242,22 @@ def failing[R <: Effects](using Member[StateOf[Int], R], Member[ExcOf[String], R
 
 @main def demoFreer(): Unit =
   // Handlers are applied in the order of the effect list.
-  val r1 = run(runExc(runWriter(runState(5)(runReader(10)(program[Fx])))))
+  val r1: Either[String, ((Int, Int), List[String])] = run(runExc(runWriter(runState(5)(runReader(10)(program[Fx])))))
   println(r1) // Right(((30,15),List(env=10 state=5, new state=15)))   (shape: Either[String, ((Int,Int), List[String])])
 
   // Different handler order = different semantics: here the state survives the exception.
   type Fx2 = StateOf[Int] :+: ExcOf[String] :+: NoFx
-  println(run(runExc(runState(0)(failing[Fx2]))))  // Left(boom)           (state lost)
+  val r2: Either[String, (Int, Int)] = run(runExc(runState(0)(failing[Fx2])))
+  println(r2) // Left(boom)           (state lost)
+
   type Fx3 = ExcOf[String] :+: StateOf[Int] :+: NoFx
-  println(run(runState(0)(runExc(failing[Fx3]))))  // (Left(boom),1)       (state kept)
+  val r3: (Either[String, Int], Int) = run(runState(0)(runExc(failing[Fx3])))
+  println(r3) // (Left(boom),1)       (state kept)
 
   // Left-nested binds are cheap thanks to the type-aligned queue.
-  val n = 20//0000
+  val n = 20 //0000
   val deep: Eff[ReaderOf[Int] :+: NoFx, Int] =
     (1 to n).foldLeft(ask[Int, ReaderOf[Int] :+: NoFx])((m, _) => m.flatMap(x => Pure(x + 1)))
-  println(run(runReader(0)(deep))) // 200000
+  val r4: Int = run(runReader(0)(deep))
+  println(r4) // 200000
 
