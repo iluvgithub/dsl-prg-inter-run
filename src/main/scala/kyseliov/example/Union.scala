@@ -1,4 +1,4 @@
-package kyseliov
+package kyseliov.example
 
 // r represents a type-level tuple/list of effect constructors (e.g., (Reader[Int, *], State[String, *]))
 // Using an opaque type or erased tag + Any mimics Kiselyov's O(1) internal representation.

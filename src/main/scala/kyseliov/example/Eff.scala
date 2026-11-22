@@ -1,4 +1,6 @@
-package kyseliov
+package kyseliov.example
+
+
 enum Eff[R, A]:
   case Pure(a: A)
   case Impure[R, X, A](union: Union[R, X], k: X => Eff[R, A]) extends Eff[R, A]
