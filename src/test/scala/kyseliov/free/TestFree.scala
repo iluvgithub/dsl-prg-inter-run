@@ -1,7 +1,9 @@
-package kyseliov.freer
+package kyseliov.free
 
-import kyseliov.freer.StateSyntax.FreeState
-import kyseliov.freer.Trampoline.Bounce
+import cats.Monoid
+import kyseliov.free.ReaderWriterSyntax.IT
+import kyseliov.free.StateSyntax.FreeState
+import kyseliov.free.Trampoline.Bounce
 import munit.FunSuite
 import org.scalatest.matchers.should.Matchers.*
 
@@ -48,3 +50,26 @@ class TestFree extends FunSuite:
     // assert
     val out: Long = zipped.map({ case (u, v) => u + v + 0L }).sum
     out shouldBe (n - 1L) * n
+
+  test("simple sum with read write"):
+    // arrange
+    given Monoid[Long] with
+      override def empty: Long = 0L
+
+      override def combine(x: Long, y: Long): Long = x + y
+
+    def sum(i: Int): Long =
+      val it0: IT[Long, Long, Long] = Iterator.range(0, i).foldLeft(ReaderWriterSyntax.getIT[Long, Long])(
+        (acc, i) =>
+          for {
+            y <- acc
+            _ = ReaderWriterSyntax.pureIT(y + i)
+          } yield y + i
+      )
+      ReaderWriterSyntax.runIt(0L, it0)._1
+    val n = 50000
+    // act
+    val out = sum(n)
+    // assert
+    out shouldBe 1L * n * (n - 1) / 2
+

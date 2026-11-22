@@ -1,4 +1,4 @@
-package freer.reader
+package kyseliov.free
 
 import cats.Monad
 

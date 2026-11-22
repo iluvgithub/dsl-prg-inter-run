@@ -1,6 +1,6 @@
-package kyseliov.freer
+package kyseliov.free
 
-import cats.{Functor, Monad}
+import cats.{Functor, Monad, Monoid}
 
 import scala.annotation.tailrec
 
@@ -117,3 +117,39 @@ object StateSyntax:
       } yield (n, a) :: xs
     )
     runState(0, st)._1.reverse
+
+
+object ReaderWriterSyntax:
+
+  enum RW[I, O, X]:
+    case Get(f: I => X)
+    case Put(o: O, x: X)
+
+  given [I, O]: Functor[[X] =>> RW[I, O, X]] with
+
+    def map[A, B](fa: RW[I, O, A])(f: A => B): RW[I, O, B] =
+      fa match
+        case RW.Get(g) =>
+          RW.Get(g.andThen(f))
+
+        case RW.Put(s, a) =>
+          RW.Put(s, f(a))
+
+
+  type IT[I, O, A] = Free[[X] =>> RW[I, O, X], A]
+
+  def pureIT[I, O, A](a: A): IT[I, O, A] = Free.pure(a)
+
+  def getIT[I, O]: IT[I, O, I] = Free.impure(RW.Get(pureIT))
+
+  def putIT[I, O](o: O): IT[I, O, Unit] = Free.impure(RW.Put(o, pureIT(())))
+
+  def runIt[I, O, A](i: I, it: IT[I, O, A])(using MON: Monoid[O]): (A, O) =
+    @tailrec
+    def loop(acc: O, it: IT[I, O, A]): (A, O) = Free.out(it) match {
+      case Right(a) => (a, acc)
+      case Left(RW.Get(f)) => loop(acc, f(i))
+      case Left(RW.Put(o, a)) => loop(MON.combine(acc, o), a)
+    }
+
+    loop(MON.empty, it)
