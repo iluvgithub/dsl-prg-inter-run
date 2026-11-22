@@ -20,7 +20,8 @@ object Interpreters:
 
   // ---- 3a. In-memory interpreter (target monad: Try) -----------------------
   //  Handy for tests. Note: no rollback, each operation is applied immediately.
-  final class InMemoryInterpreter(initial: Map[String, BigDecimal]) extends (AccountOp ~> Try):
+  final class InMemoryInterpreter(initial: Map[String, BigDecimal]) 
+    extends (AccountOp ~> Try):
 
     private val store = mutable.Map.from(initial)
 

@@ -13,6 +13,7 @@ package example.taglessfinal
 //   4. RUNNER       supplies the connection + transaction for F = Tx
 
 import cats.Monad
+import example.taglessfinal.domain.AccountAlg
 import example.taglessfinal.interpreter.Interpreters.{InMemoryAccounts, JdbcAccounts, Tx}
 import example.taglessfinal.program.Program
 import example.taglessfinal.runner.Runner.runTransactionally
@@ -22,15 +23,22 @@ import scala.util.{Try, Using}
 
 object Main:
   @main def runDemo(): Unit =
+    runDemoMem()
+    runDemoJdbc()
+
+  private def runDemoMem(): Unit =
 
     // ---- in-memory: F = Try, the program IS the result ----
     val mem = InMemoryAccounts(Map("a-1" -> BigDecimal(500), "a-2" -> BigDecimal(0)))
 
-    println(s"in-memory ok     : ${Program.transfer[Try]("a-1", "a-2", 100)(using summon, mem)}")
+    given AccountAlg[Try] = mem
+
+    println(s"in-memory ok     : ${Program.transfer[Try]("a-1", "a-2", 100)}")
     println(s"in-memory state  : ${mem.snapshot}")
-    println(s"in-memory broken : ${Program.transfer[Try]("a-1", "missing", 100)(using summon, mem)}")
+    println(s"in-memory broken : ${Program.transfer[Try]("a-1", "missing", 100)}")
     println(s"in-memory state  : ${mem.snapshot}  (debit NOT rolled back)")
 
+  private def runDemoJdbc(): Unit =
     // ---- JDBC (H2 in-memory database): F = Tx ----
     val url = "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1"
     val open = () => DriverManager.getConnection(url)
@@ -49,9 +57,10 @@ object Main:
             .map(r => r.getString("no") -> BigDecimal(r.getBigDecimal("balance")))
             .toMap
 
-    val monadTx: Monad[Tx] = summon[Monad[Tx]]
-    val ok     = Program.transfer[Tx]("a-1", "a-2", 100)(using monadTx, JdbcAccounts)
-    val broken = Program.transfer[Tx]("a-1", "missing", 100)(using monadTx, JdbcAccounts)
+
+    given AccountAlg[Tx] = JdbcAccounts
+    val ok = Program.transfer[Tx]("a-1", "a-2", 100)
+    val broken = Program.transfer[Tx]("a-1", "missing", 100)
 
     println(s"jdbc ok          : ${ok.runTransactionally(open)}")
     println(s"jdbc state       : ${balances()}")

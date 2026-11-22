@@ -16,7 +16,8 @@ object Interpreters:
 
   // ---- 3a. In-memory instance (F = Try) ------------------------------------
   //  Handy for tests. Note: no rollback, each operation is applied immediately.
-  final class InMemoryAccounts(initial: Map[String, BigDecimal]) extends AccountAlg[Try]:
+  final class InMemoryAccounts(initial: Map[String, BigDecimal])
+    extends AccountAlg[Try]:
 
     private val store = mutable.Map.from(initial)
 

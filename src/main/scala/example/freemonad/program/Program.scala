@@ -11,7 +11,10 @@ import example.freemonad.domain.{Account, AccountF, credit, debit}
 object Program:
   import example.freemonad.domain.*
 
-  def transfer(from: String, to: String, amt: BigDecimal): AccountF[(Account, Account)] =
+  def transfer(from: String,
+               to: String,
+               amt: BigDecimal): 
+  AccountF[(Account, Account)] =
     for
       f <- debit(from, amt)
       t <- credit(to, amt)

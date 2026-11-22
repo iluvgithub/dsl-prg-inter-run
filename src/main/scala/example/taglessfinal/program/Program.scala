@@ -13,9 +13,11 @@ import example.taglessfinal.domain.{Account, AccountAlg}
 // =============================================================================
 object Program:
 
-  def transfer[F[_]: Monad](from: String, to: String, amt: BigDecimal)(using
-                                                                       accounts: AccountAlg[F]
-  ): F[(Account, Account)] =
+  def transfer[F[_] : Monad](from: String,
+                             to: String,
+                             amt: BigDecimal)
+                            (using accounts: AccountAlg[F]
+                            ): F[(Account, Account)] =
     for
       f <- accounts.debit(from, amt)
       t <- accounts.credit(to, amt)
